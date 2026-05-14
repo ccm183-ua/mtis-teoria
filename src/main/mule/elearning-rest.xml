@@ -508,6 +508,24 @@ VALUES (:id, :to, :subject, :body, 'CERTIFICATE', 'SENT', :uid, NOW())
 		<flow-ref name="validate-api-key-subflow" doc:name="validate-api-key-subflow" />
 		<set-variable value="#[uuid()]" variableName="pid" doc:name="pid" />
 		<set-variable value="#[payload]" variableName="pay" doc:name="pay" />
+		<validation:is-true config-ref="Validation_Config" expression="#[not isEmpty(vars.pay.userId)]" message="userId obligatorio" doc:name="Validar userId" />
+		<validation:is-true config-ref="Validation_Config" expression="#[not isEmpty(vars.pay.courseId)]" message="courseId obligatorio" doc:name="Validar courseId" />
+		<validation:is-true config-ref="Validation_Config" expression="#[(vars.pay.amount default 0) as Number &gt;= 0]" message="amount no puede ser negativo" doc:name="Validar amount" />
+		<db:select config-ref="Database_Config" doc:name="SELECT usuario activo">
+			<db:sql><![CDATA[SELECT id, name, email, active FROM users WHERE id = :id AND active = true]]></db:sql>
+			<db:input-parameters><![CDATA[#[{ id: vars.pay.userId }]]]></db:input-parameters>
+		</db:select>
+		<validation:is-true config-ref="Validation_Config" expression="#[sizeOf(payload default []) &gt; 0]" message="Usuario no encontrado o inactivo" doc:name="Existe usuario" />
+		<set-variable value="#[payload[0]]" variableName="paymentUser" doc:name="paymentUser" />
+		<db:select config-ref="Database_Config" doc:name="SELECT curso activo">
+			<db:sql><![CDATA[SELECT id, title, price, currency, active FROM courses WHERE id = :id AND active = true]]></db:sql>
+			<db:input-parameters><![CDATA[#[{ id: vars.pay.courseId }]]]></db:input-parameters>
+		</db:select>
+		<validation:is-true config-ref="Validation_Config" expression="#[sizeOf(payload default []) &gt; 0]" message="Curso no encontrado o inactivo" doc:name="Existe curso" />
+		<set-variable value="#[payload[0]]" variableName="paymentCourse" doc:name="paymentCourse" />
+		<set-variable value="#[(vars.pay.amount default vars.paymentCourse.price default 0) as Number]" variableName="paymentAmount" doc:name="paymentAmount" />
+		<set-variable value="#[(vars.pay.currency default vars.paymentCourse.currency default 'EUR')]" variableName="paymentCurrency" doc:name="paymentCurrency" />
+		<set-variable value="#['fgw-ref-' ++ ((vars.pid as String) replace '-' with '')]" variableName="externalRef" doc:name="externalRef" />
 		<db:insert config-ref="Database_Config" doc:name="INSERT payment PENDING">
 			<db:sql><![CDATA[
 INSERT INTO payments (id, user_id, course_id, amount, currency, status, external_ref)
@@ -517,31 +535,56 @@ VALUES (:id, :uid, :cid, :amount, :cur, 'PENDING', :eref)
   id: vars.pid,
   uid: vars.pay.userId,
   cid: vars.pay.courseId,
-  amount: vars.pay.amount,
-  cur: vars.pay.currency default 'EUR',
-  eref: ('mock-ref-' ++ vars.pid)
+  amount: vars.paymentAmount,
+  cur: vars.paymentCurrency,
+  eref: vars.externalRef
 }]]]></db:input-parameters>
 		</db:insert>
-		<set-payload value="#[%dw 2.0 output application/json --- { paymentId: vars.pid, status: 'PENDING', externalRef: ('mock-ref-' ++ vars.pid) }]" doc:name="Respuesta proceso" />
+		<set-payload value="#[%dw 2.0
+output application/json
+---
+{
+  paymentId: vars.pid,
+  status: 'PENDING',
+  externalRef: vars.externalRef,
+  userId: vars.pay.userId,
+  courseId: vars.pay.courseId,
+  amount: vars.paymentAmount,
+  currency: vars.paymentCurrency
+}]" doc:name="Respuesta proceso" />
 	</flow>
 
 	<flow name="post-payments-confirm-flow" doc:name="post-payments-confirm-flow">
 		<http:listener config-ref="HTTP_Listener_config" path="/payments/confirm" allowedMethods="POST" doc:name="POST payments/confirm" />
 		<flow-ref name="validate-api-key-subflow" doc:name="validate-api-key-subflow" />
+		<validation:is-true config-ref="Validation_Config" expression="#[not isEmpty(payload.paymentId)]" message="paymentId obligatorio" doc:name="Validar paymentId" />
+		<db:select config-ref="Database_Config" doc:name="SELECT payment PENDING">
+			<db:sql><![CDATA[SELECT id, user_id, course_id, amount, currency, status, external_ref FROM payments WHERE id=:id AND status='PENDING']]></db:sql>
+			<db:input-parameters><![CDATA[#[{ id: payload.paymentId }]]]></db:input-parameters>
+		</db:select>
+		<validation:is-true config-ref="Validation_Config" expression="#[sizeOf(payload default []) &gt; 0]" message="Pago no encontrado o no pendiente" doc:name="Existe pago pendiente" />
+		<set-variable value="#[payload[0]]" variableName="payment" doc:name="payment" />
 		<db:update config-ref="Database_Config" doc:name="UPDATE CONFIRMED">
 			<db:sql><![CDATA[UPDATE payments SET status='CONFIRMED', updated_at=NOW() WHERE id=:id AND status='PENDING']]></db:sql>
-			<db:input-parameters><![CDATA[#[{ id: payload.paymentId }]]]></db:input-parameters>
+			<db:input-parameters><![CDATA[#[{ id: vars.payment.id }]]]></db:input-parameters>
 		</db:update>
-		<set-payload value="#[%dw 2.0 output application/json --- { paymentId: payload.paymentId, status: 'CONFIRMED' }]" doc:name="Respuesta" />
+		<set-payload value="#[%dw 2.0 output application/json --- vars.payment ++ { status: 'CONFIRMED' }]" doc:name="Respuesta" />
 	</flow>
 
 	<flow name="post-payments-cancel-flow" doc:name="post-payments-cancel-flow">
 		<http:listener config-ref="HTTP_Listener_config" path="/payments/cancel" allowedMethods="POST" doc:name="POST payments/cancel" />
 		<flow-ref name="validate-api-key-subflow" doc:name="validate-api-key-subflow" />
+		<validation:is-true config-ref="Validation_Config" expression="#[not isEmpty(payload.paymentId)]" message="paymentId obligatorio" doc:name="Validar paymentId" />
+		<db:select config-ref="Database_Config" doc:name="SELECT payment">
+			<db:sql><![CDATA[SELECT id, user_id, course_id, amount, currency, status, external_ref FROM payments WHERE id=:id]]></db:sql>
+			<db:input-parameters><![CDATA[#[{ id: payload.paymentId }]]]></db:input-parameters>
+		</db:select>
+		<validation:is-true config-ref="Validation_Config" expression="#[sizeOf(payload default []) &gt; 0]" message="Pago no encontrado" doc:name="Existe pago" />
+		<set-variable value="#[payload[0]]" variableName="payment" doc:name="payment" />
 		<db:update config-ref="Database_Config" doc:name="UPDATE CANCELLED">
 			<db:sql><![CDATA[UPDATE payments SET status='CANCELLED', updated_at=NOW() WHERE id=:id]]></db:sql>
-			<db:input-parameters><![CDATA[#[{ id: payload.paymentId }]]]></db:input-parameters>
+			<db:input-parameters><![CDATA[#[{ id: vars.payment.id }]]]></db:input-parameters>
 		</db:update>
-		<set-payload value="#[%dw 2.0 output application/json --- { paymentId: payload.paymentId, status: 'CANCELLED' }]" doc:name="Respuesta" />
+		<set-payload value="#[%dw 2.0 output application/json --- vars.payment ++ { status: 'CANCELLED' }]" doc:name="Respuesta" />
 	</flow>
 </mule>
