@@ -1,0 +1,11 @@
+http:
+  host: "0.0.0.0"
+  port: "8081"
+
+db:
+  url: "jdbc:mysql://127.0.0.1:3306/mtis?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC"
+  user: "root"
+  password: "0903"
+
+app:
+  name: "mtis-elearning"
