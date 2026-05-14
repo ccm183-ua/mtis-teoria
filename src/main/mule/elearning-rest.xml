@@ -68,7 +68,7 @@ var u = vars.dbUser
 {
   token: &quot;mtis-&quot; ++ ((u.id as String) splitBy &quot;-&quot;) joinBy &quot;&quot;,
   user: { id: u.id, name: u.name, email: u.email, role: u.role }
-]" doc:name="Respuesta login" />
+}]" doc:name="Respuesta login" />
 	</flow>
 
 	<flow name="get-users-list-flow" doc:name="get-users-list-flow">
@@ -479,7 +479,7 @@ VALUES (:id, :to, :subject, :body, 'ENROLLMENT', 'SENT', :uid, NOW())
   uid: payload.userId default null
 }]]]></db:input-parameters>
 		</db:insert>
-		<set-payload value="#[%dw 2.0 output application/json --- { id: vars.nid, status: 'SENT', type: 'ENROLLMENT' }]" doc:name="Respuesta" />
+		<set-payload value="#[%dw 2.0 output application/json --- { id: vars.nid, status: 'SENT', 'type': 'ENROLLMENT' }]" doc:name="Respuesta" />
 	</flow>
 
 	<flow name="post-notifications-certificate-flow" doc:name="post-notifications-certificate-flow">
@@ -499,7 +499,7 @@ VALUES (:id, :to, :subject, :body, 'CERTIFICATE', 'SENT', :uid, NOW())
   uid: payload.userId default null
 }]]]></db:input-parameters>
 		</db:insert>
-		<set-payload value="#[%dw 2.0 output application/json --- { id: vars.nid, status: 'SENT', type: 'CERTIFICATE' }]" doc:name="Respuesta" />
+		<set-payload value="#[%dw 2.0 output application/json --- { id: vars.nid, status: 'SENT', 'type': 'CERTIFICATE' }]" doc:name="Respuesta" />
 	</flow>
 
 	<!-- FinancialGatewayService (mock REST) -->
