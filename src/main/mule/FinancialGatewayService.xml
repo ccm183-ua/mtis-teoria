@@ -20,20 +20,8 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 		<validation:is-true config-ref="Validation_Config" expression="#[not isEmpty(vars.pay.userId)]" message="userId obligatorio" doc:name="Validar userId" />
 		<validation:is-true config-ref="Validation_Config" expression="#[not isEmpty(vars.pay.courseId)]" message="courseId obligatorio" doc:name="Validar courseId" />
 		<validation:is-true config-ref="Validation_Config" expression="#[(vars.pay.amount default 0) as Number &gt;= 0]" message="amount no puede ser negativo" doc:name="Validar amount" />
-		<db:select config-ref="Database_Config" doc:name="SELECT usuario activo">
-			<db:sql><![CDATA[SELECT id, name, email, active FROM users WHERE id = :id AND active = true]]></db:sql>
-			<db:input-parameters><![CDATA[#[{ id: vars.pay.userId }]]]></db:input-parameters>
-		</db:select>
-		<validation:is-true config-ref="Validation_Config" expression="#[sizeOf(payload default []) &gt; 0]" message="Usuario no encontrado o inactivo" doc:name="Existe usuario" />
-		<set-variable value="#[payload[0]]" variableName="paymentUser" doc:name="paymentUser" />
-		<db:select config-ref="Database_Config" doc:name="SELECT curso activo">
-			<db:sql><![CDATA[SELECT id, title, price, currency, active FROM courses WHERE id = :id AND active = true]]></db:sql>
-			<db:input-parameters><![CDATA[#[{ id: vars.pay.courseId }]]]></db:input-parameters>
-		</db:select>
-		<validation:is-true config-ref="Validation_Config" expression="#[sizeOf(payload default []) &gt; 0]" message="Curso no encontrado o inactivo" doc:name="Existe curso" />
-		<set-variable value="#[payload[0]]" variableName="paymentCourse" doc:name="paymentCourse" />
-		<set-variable value="#[(vars.pay.amount default vars.paymentCourse.price default 0) as Number]" variableName="paymentAmount" doc:name="paymentAmount" />
-		<set-variable value="#[(vars.pay.currency default vars.paymentCourse.currency default 'EUR')]" variableName="paymentCurrency" doc:name="paymentCurrency" />
+		<set-variable value="#[(vars.pay.amount default 0) as Number]" variableName="paymentAmount" doc:name="paymentAmount" />
+		<set-variable value="#[(vars.pay.currency default 'EUR')]" variableName="paymentCurrency" doc:name="paymentCurrency" />
 		<set-variable value="#['fgw-ref-' ++ ((vars.pid as String) replace '-' with '')]" variableName="externalRef" doc:name="externalRef" />
 		<db:insert config-ref="Database_Config" doc:name="INSERT payment PENDING">
 			<db:sql><![CDATA[
