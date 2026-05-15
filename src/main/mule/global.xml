@@ -25,31 +25,6 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 		<db:generic-connection url="${db.url}" driverClassName="com.mysql.cj.jdbc.Driver" user="${db.user}" password="${db.password}" />
 	</db:config>
 
-	<sub-flow name="validate-api-key-subflow" doc:name="validate-api-key-subflow">
-		<set-variable value="#[payload]" variableName="savedPayload" doc:name="Guardar payload" />
-		<set-variable value="#[attributes.headers['x-api-key'] default attributes.headers['X-API-Key']]" variableName="apiKey" doc:name="apiKey" />
-		<choice doc:name="¿Cabecera presente?">
-			<when expression="#[isEmpty(vars.apiKey)]">
-				<validation:is-true expression="#[false]" message="Falta cabecera X-API-Key" config-ref="Validation_Config" doc:name="Falta API Key" />
-			</when>
-			<otherwise>
-				<db:select doc:name="Validar restkey" config-ref="Database_Config">
-					<db:sql><![CDATA[SELECT COUNT(*) AS c FROM restkey WHERE rest_key = :k]]></db:sql>
-					<db:input-parameters><![CDATA[#[{ k: vars.apiKey }]]]></db:input-parameters>
-				</db:select>
-				<choice doc:name="¿Key válida?">
-					<when expression="#[((payload default [{}])[0].c default 0) &gt; 0]">
-						<logger level="DEBUG" message="API Key válida" doc:name="Logger" />
-					</when>
-					<otherwise>
-						<validation:is-true expression="#[false]" message="API Key no autorizada" config-ref="Validation_Config" doc:name="API Key inválida" />
-					</otherwise>
-				</choice>
-			</otherwise>
-		</choice>
-		<set-payload value="#[vars.savedPayload]" doc:name="Restaurar payload" />
-	</sub-flow>
-
 	<error-handler name="global-error-handler" doc:name="global-error-handler">
 		<on-error-propagate type="HTTP:NOT_FOUND" enableNotifications="true" logException="true" doc:name="On Error Propagate">
 			<set-payload value="#[%dw 2.0&#10;output application/json&#10;---&#10;{ message: error.description default 'No encontrado' }]" doc:name="JSON error" />
