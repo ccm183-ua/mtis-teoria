@@ -1,0 +1,185 @@
+{
+  "info": {
+    "_postman_id": "7a56ce89-5514-4c4b-9db9-ccf914f3e2b1",
+    "name": "FinancialGatewayService - MTIS",
+    "description": "Pruebas Postman para las tres operaciones del FinancialGatewayService: ProcessPayment, ConfirmPayment y CancelPayment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:8081"
+    },
+    {
+      "key": "apiKey",
+      "value": "elearning-key-2025"
+    },
+    {
+      "key": "userId",
+      "value": "00000000-0000-0000-0000-000000000003"
+    },
+    {
+      "key": "courseId",
+      "value": "10000000-0000-0000-0000-000000000001"
+    },
+    {
+      "key": "paymentId",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "ProcessPayment - crear pago pendiente",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test('Devuelve paymentId y estado PENDING', function () {",
+              "  pm.expect(json.paymentId).to.be.a('string').and.not.empty;",
+              "  pm.expect(json.status).to.eql('PENDING');",
+              "});",
+              "",
+              "pm.collectionVariables.set('paymentId', json.paymentId);"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"userId\": \"{{userId}}\",\n  \"courseId\": \"{{courseId}}\",\n  \"amount\": 10,\n  \"currency\": \"EUR\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payments/process",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "payments",
+            "process"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "ConfirmPayment - confirmar pago",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test('El pago queda CONFIRMED', function () {",
+              "  pm.expect(json.status).to.eql('CONFIRMED');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentId\": \"{{paymentId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payments/confirm",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "payments",
+            "confirm"
+          ]
+        }
+      },
+      "response": []
+    },
+    {
+      "name": "CancelPayment - cancelar pago",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "type": "text/javascript",
+            "exec": [
+              "pm.test('HTTP 200', function () {",
+              "  pm.response.to.have.status(200);",
+              "});",
+              "",
+              "const json = pm.response.json();",
+              "",
+              "pm.test('El pago queda CANCELLED', function () {",
+              "  pm.expect(json.status).to.eql('CANCELLED');",
+              "});"
+            ]
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          },
+          {
+            "key": "X-API-Key",
+            "value": "{{apiKey}}"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"paymentId\": \"{{paymentId}}\"\n}"
+        },
+        "url": {
+          "raw": "{{baseUrl}}/payments/cancel",
+          "host": [
+            "{{baseUrl}}"
+          ],
+          "path": [
+            "payments",
+            "cancel"
+          ]
+        }
+      },
+      "response": []
+    }
+  ]
+}
