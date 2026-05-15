@@ -26,7 +26,7 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 	</db:config>
 
 	<sub-flow name="validate-api-key-subflow" doc:name="validate-api-key-subflow">
-		<set-variable value="#[payload]" variableName="_savedPayload" doc:name="Guardar payload" />
+		<set-variable value="#[payload]" variableName="savedPayload" doc:name="Guardar payload" />
 		<set-variable value="#[attributes.headers['x-api-key'] default attributes.headers['X-API-Key']]" variableName="apiKey" doc:name="apiKey" />
 		<choice doc:name="¿Cabecera presente?">
 			<when expression="#[isEmpty(vars.apiKey)]">
@@ -47,7 +47,7 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 				</choice>
 			</otherwise>
 		</choice>
-		<set-payload value="#[vars._savedPayload]" doc:name="Restaurar payload" />
+		<set-payload value="#[vars.savedPayload]" doc:name="Restaurar payload" />
 	</sub-flow>
 
 	<error-handler name="global-error-handler" doc:name="global-error-handler">
