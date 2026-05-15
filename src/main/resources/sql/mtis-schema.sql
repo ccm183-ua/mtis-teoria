@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS restkey (
     id INT AUTO_INCREMENT NOT NULL,
     rest_key VARCHAR(255) NOT NULL,
     description VARCHAR(255) NULL,
-    active BOOLEAN NOT NULL DEFAULT TRUE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uk_rest_key (rest_key)
@@ -145,7 +144,7 @@ CREATE TABLE IF NOT EXISTS legacy_sync_log (
     PRIMARY KEY (id)
 );
 
-INSERT INTO restkey (rest_key, description) VALUES ('elearning-key-2025', 'API pública plataforma e-learning')
+INSERT INTO restkey (rest_key) VALUES ('elearning-key-2025')
 ON DUPLICATE KEY UPDATE rest_key = VALUES(rest_key);
 
 -- Datos demo (contraseña para ambos: password123)

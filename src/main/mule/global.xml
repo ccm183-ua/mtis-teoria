@@ -34,7 +34,7 @@ http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mu
 			</when>
 			<otherwise>
 				<db:select doc:name="Validar restkey" config-ref="Database_Config">
-					<db:sql><![CDATA[SELECT COUNT(*) AS c FROM restkey WHERE rest_key = :k AND active = true]]></db:sql>
+					<db:sql><![CDATA[SELECT COUNT(*) AS c FROM restkey WHERE rest_key = :k]]></db:sql>
 					<db:input-parameters><![CDATA[#[{ k: vars.apiKey }]]]></db:input-parameters>
 				</db:select>
 				<choice doc:name="¿Key válida?">
